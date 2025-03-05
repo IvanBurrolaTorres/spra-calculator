@@ -1728,5 +1728,314 @@ body {
     gap: 15px;
   }
 }
+
+/* Amazon Costs Panel y Margin Breakdown mejorado */
+.amazon-costs-panel {
+  background-color: white;
+  border-radius: var(--border-radius);
+  margin-top: 20px;
+  margin-bottom: 20px;
+  box-shadow: var(--box-shadow);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid #e2e8f0;
+}
+
+.amazon-costs-panel:hover {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.amazon-costs-header {
+  background-color: #f8fafc;
+  padding: 12px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  border-bottom: 1px solid #e2e8f0;
+  transition: background-color 0.2s ease;
+}
+
+.amazon-costs-header:hover {
+  background-color: #f1f5f9;
+}
+
+.amazon-costs-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.amazon-costs-summary {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--primary-color);
+}
+
+.amazon-costs-details {
+  padding: 15px;
+  animation: fadeIn 0.3s ease;
+}
+
+.fee-input-group {
+  margin-bottom: 15px;
+  border-bottom: 1px dashed #e2e8f0;
+  padding-bottom: 15px;
+}
+
+.fee-input-group:last-child {
+  border-bottom: none;
+}
+
+.fee-description {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.fee-label {
+  font-weight: 500;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+.fee-tip {
+  color: #64748b;
+  cursor: help;
+  font-size: 1rem;
+  transition: transform 0.2s ease;
+}
+
+.fee-tip:hover {
+  transform: scale(1.1);
+}
+
+.fee-input-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.fee-currency {
+  padding: 0 8px;
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-right: none;
+  border-radius: var(--border-radius) 0 0 var(--border-radius);
+  color: #64748b;
+  font-weight: 500;
+  height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.fee-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  font-size: 1rem;
+  height: 40px;
+}
+
+.fee-input:focus {
+  outline: none;
+  border-color: var(--secondary-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.fee-percent {
+  margin-left: 10px;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.costs-info-box {
+  background-color: rgba(59, 130, 246, 0.1);
+  border-radius: var(--border-radius);
+  padding: 10px 15px;
+  margin: 15px 0;
+}
+
+.costs-info-text {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #334155;
+}
+
+.amazon-calc-link {
+  color: var(--secondary-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.amazon-calc-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.total-fees-display {
+  background-color: #f1f5f9;
+  border-radius: var(--border-radius);
+  padding: 12px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 15px;
+  border: 1px solid #cbd5e1;
+}
+
+.total-fees-label {
+  font-weight: 600;
+  color: #334155;
+}
+
+.total-fees-value {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--primary-color);
+}
+
+/* Desglose de márgenes mejorado */
+.breakdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.breakdown-view-toggle {
+  display: flex;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.breakdown-view-button {
+  background-color: transparent;
+  border: none;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.breakdown-view-button.active {
+  background-color: var(--secondary-color);
+  color: white;
+  font-weight: 500;
+}
+
+.breakdown-view-button:not(.active) {
+  color: #64748b;
+}
+
+.breakdown-view-button:not(.active):hover {
+  background-color: #f1f5f9;
+}
+
+.breakdown-section {
+  margin-bottom: 20px;
+}
+
+.breakdown-section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #334155;
+  margin: 0 0 10px 0;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.breakdown-detailed, .breakdown-summary {
+  animation: fadeIn 0.3s ease;
+}
+
+.summary-chart {
+  margin-bottom: 20px;
+}
+
+.chart-container {
+  display: flex;
+  height: 40px;
+  width: 100%;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.chart-bar {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: width 0.8s ease;
+}
+
+.chart-bar .bar-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 5px;
+}
+
+.cost-bar {
+  background-color: #64748b;
+}
+
+.amazon-bar {
+  background-color: #f59e0b;
+}
+
+.iva-bar {
+  background-color: #06b6d4;
+}
+
+.profit-bar {
+  background-color: #16a34a;
+}
+
+.chart-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+}
+
+.chart-label {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.summary-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  text-align: center;
+}
+
+.summary-metric {
+  padding: 10px;
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.summary-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.summary-label {
+  font-size: 0.8rem;
+  color: #64748b;
+}
   
 }

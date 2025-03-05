@@ -1,260 +1,293 @@
 import React, { useState } from 'react';
+import './MarginBreakdown.css';
 
 function MarginBreakdown({ sellingPrice, costPrice, amazonCosts, applyIva, historicalMinPrice }) {
-  const [viewMode, setViewMode] = useState('detailed'); // 'detailed' o 'summary'
-
-  if (!sellingPrice || !costPrice) {
-    return (
-      <div className="margin-breakdown empty-breakdown">
-        <p>Ingrese precio de venta y costo para ver el desglose de márgenes.</p>
-      </div>
-    );
+  const [showDetails, setShowDetails] = useState(false);
+  
+  // Verificar que tenemos todos los datos necesarios
+  if (!sellingPrice || !costPrice || !amazonCosts) {
+    return null;
   }
-
-  // Extraer costos de Amazon
-  const { referralFee, fulfillmentFee, storageFee, otherFees, total: totalAmazonFees } = amazonCosts || {
-    referralFee: 0,
-    fulfillmentFee: 0,
-    storageFee: 0,
-    otherFees: 0,
-    total: 0
+  
+  const ivaRate = applyIva ? 0.16 : 0;
+  
+  // Cálculos para el precio actual
+  const priceAfterIva = sellingPrice / (1 + ivaRate);
+  const totalFees = amazonCosts.total;
+  const netRevenue = priceAfterIva - totalFees;
+  const profit = netRevenue - costPrice;
+  const profitMargin = (profit / sellingPrice) * 100;
+  
+  // Cálculos para el precio mínimo histórico (si está disponible)
+  let minPriceAfterIva = 0;
+  let minNetRevenue = 0;
+  let minProfit = 0;
+  let minProfitMargin = 0;
+  
+  if (historicalMinPrice && historicalMinPrice > 0) {
+    minPriceAfterIva = historicalMinPrice / (1 + ivaRate);
+    minNetRevenue = minPriceAfterIva - totalFees;
+    minProfit = minNetRevenue - costPrice;
+    minProfitMargin = (minProfit / historicalMinPrice) * 100;
+  }
+  
+  // Función para determinar la clase CSS basada en el valor
+  const getValueClass = (value) => {
+    if (value > 20) return "high-value";
+    if (value > 10) return "good-value";
+    if (value > 0) return "medium-value";
+    return "negative-value";
   };
-
-  // Calcular valores
-  const ivaRate = applyIva ? 0.16 : 0; // 16% IVA México si está activado
-  const ivaAmount = sellingPrice * ivaRate / (1 + ivaRate);
-  const priceBeforeIva = sellingPrice - ivaAmount;
   
-  // Ingresos después de comisiones e IVA
-  const revenueAfterFees = priceBeforeIva - totalAmazonFees;
+  // Formatear número como moneda
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(value);
+  };
   
-  // Ganancia neta
-  const netProfit = revenueAfterFees - costPrice;
+  // Formatear número como porcentaje
+  const formatPercent = (value) => {
+    return value.toFixed(2) + '%';
+  };
   
-  // Beneficio neto con precio mínimo histórico
-  const minPriceBeforeIva = historicalMinPrice ? (historicalMinPrice / (1 + ivaRate)) : 0;
-  const minPriceNetProfit = historicalMinPrice ? (minPriceBeforeIva - totalAmazonFees - costPrice) : 0;
-  
-  // Margen neto como porcentaje
-  const netMarginPercentage = (netProfit / sellingPrice) * 100;
-  
-  // ROI (Return on Investment)
-  const roi = (netProfit / costPrice) * 100;
-  
-  // Punto de equilibrio (Break-even price)
-  const breakEvenPrice = (costPrice + totalAmazonFees) / (1 - (ivaRate / (1 + ivaRate)));
-  
-  // Determinar clase de color según rentabilidad
-  let marginClass = "poor-margin";
-  if (netMarginPercentage >= 35) marginClass = "high-margin";
-  else if (netMarginPercentage >= 25) marginClass = "good-margin";
-  else if (netMarginPercentage >= 15) marginClass = "medium-margin";
-  else if (netMarginPercentage >= 10) marginClass = "low-margin";
-
   return (
-    <div className={`margin-breakdown ${marginClass}`}>
-      <div className="breakdown-header">
-        <h4 className="breakdown-title">Desglose Real de Márgenes</h4>
-        <div className="breakdown-view-toggle">
+    <div className="margin-breakdown-container">
+      <div className="margin-summary">
+        <h4 className="margin-title">
+          Desglose de Márgenes
           <button 
-            className={`breakdown-view-button ${viewMode === 'detailed' ? 'active' : ''}`}
-            onClick={() => setViewMode('detailed')}
+            className="toggle-details-btn"
+            onClick={() => setShowDetails(!showDetails)}
+            title={showDetails ? "Ocultar detalles" : "Mostrar detalles"}
           >
-            Detallado
+            {showDetails ? "▲" : "▼"}
           </button>
-          <button 
-            className={`breakdown-view-button ${viewMode === 'summary' ? 'active' : ''}`}
-            onClick={() => setViewMode('summary')}
-          >
-            Resumen
-          </button>
-        </div>
-      </div>
-      
-      {viewMode === 'detailed' ? (
-        <div className="breakdown-detailed">
-          <div className="breakdown-section">
-            <h5 className="breakdown-section-title">Ingresos</h5>
-            <div className="breakdown-table">
-              <div className="breakdown-row">
-                <span className="breakdown-label">Precio de venta:</span>
-                <span className="breakdown-value">${sellingPrice.toFixed(2)}</span>
-              </div>
-              
-              {applyIva && (
-                <>
-                  <div className="breakdown-row">
-                    <span className="breakdown-label">IVA (16%):</span>
-                    <span className="breakdown-value">-${ivaAmount.toFixed(2)}</span>
-                  </div>
-                  <div className="breakdown-row">
-                    <span className="breakdown-label">Precio sin IVA:</span>
-                    <span className="breakdown-value">${priceBeforeIva.toFixed(2)}</span>
-                  </div>
-                </>
-              )}
+        </h4>
+        
+        {/* Vista resumida */}
+        <div className="margin-summary-grid">
+          <div className="margin-summary-item">
+            <span className="margin-label">Beneficio neto por unidad:</span>
+            <div className={`margin-value ${getValueClass(profit)}`}>
+              {formatCurrency(profit)}
             </div>
           </div>
-          
-          <div className="breakdown-section">
-            <h5 className="breakdown-section-title">Costos de Amazon</h5>
-            <div className="breakdown-table">
-              {referralFee > 0 && (
-                <div className="breakdown-row">
-                  <span className="breakdown-label">Tarifa de referencia (comisión):</span>
-                  <span className="breakdown-value">-${parseFloat(referralFee).toFixed(2)}</span>
-                </div>
-              )}
-              
-              {fulfillmentFee > 0 && (
-                <div className="breakdown-row">
-                  <span className="breakdown-label">Gestión logística (FBA):</span>
-                  <span className="breakdown-value">-${parseFloat(fulfillmentFee).toFixed(2)}</span>
-                </div>
-              )}
-              
-              {storageFee > 0 && (
-                <div className="breakdown-row">
-                  <span className="breakdown-label">Almacenamiento:</span>
-                  <span className="breakdown-value">-${parseFloat(storageFee).toFixed(2)}</span>
-                </div>
-              )}
-              
-              {otherFees > 0 && (
-                <div className="breakdown-row">
-                  <span className="breakdown-label">Otras tarifas:</span>
-                  <span className="breakdown-value">-${parseFloat(otherFees).toFixed(2)}</span>
-                </div>
-              )}
-              
-              <div className="breakdown-row subtotal">
-                <span className="breakdown-label">Total costos Amazon:</span>
-                <span className="breakdown-value">-${totalAmazonFees.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="breakdown-section">
-            <h5 className="breakdown-section-title">Costo del Producto</h5>
-            <div className="breakdown-table">
-              <div className="breakdown-row subtotal">
-                <span className="breakdown-label">Ingreso neto después de Amazon:</span>
-                <span className="breakdown-value">${revenueAfterFees.toFixed(2)}</span>
-              </div>
-              
-              <div className="breakdown-row">
-                <span className="breakdown-label">Costo del producto:</span>
-                <span className="breakdown-value">-${costPrice.toFixed(2)}</span>
-              </div>
-              
-              <div className="breakdown-row total">
-                <span className="breakdown-label">Beneficio neto por unidad:</span>
-                <span className="breakdown-value">${netProfit.toFixed(2)}</span>
-              </div>
-              
-              {historicalMinPrice > 0 && (
-                <div className="breakdown-row min-price-scenario">
-                  <span className="breakdown-label">
-                    <span className="min-price-icon">⚠️</span> Beneficio neto con precio mínimo (${historicalMinPrice.toFixed(2)}):
-                  </span>
-                  <span className="breakdown-value min-price-value">
-                    ${minPriceNetProfit.toFixed(2)}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <div className="margin-metrics">
-            <div className={`metric ${marginClass}`}>
-              <span className="metric-label">Margen Neto:</span>
-              <span className="metric-value">{netMarginPercentage.toFixed(2)}%</span>
-            </div>
-            <div className={`metric ${marginClass}`}>
-              <span className="metric-label">ROI:</span>
-              <span className="metric-value">{roi.toFixed(2)}%</span>
-            </div>
-            <div className={`metric ${marginClass}`}>
-              <span className="metric-label">Punto Equilibrio:</span>
-              <span className="metric-value">${breakEvenPrice.toFixed(2)}</span>
+          <div className="margin-summary-item">
+            <span className="margin-label">Margen neto:</span>
+            <div className={`margin-value ${getValueClass(profitMargin)}`}>
+              {formatPercent(profitMargin)}
             </div>
           </div>
         </div>
-      ) : (
-        <div className="breakdown-summary">
-          <div className="summary-chart">
-            <div className="chart-container">
-              <div className="chart-bar cost-bar" style={{width: `${(costPrice / sellingPrice) * 100}%`}}>
-                <span className="bar-label">Costo</span>
-              </div>
-              <div className="chart-bar amazon-bar" style={{width: `${(totalAmazonFees / sellingPrice) * 100}%`}}>
-                <span className="bar-label">Amazon</span>
-              </div>
-              {applyIva && (
-                <div className="chart-bar iva-bar" style={{width: `${(ivaAmount / sellingPrice) * 100}%`}}>
-                  <span className="bar-label">IVA</span>
+        
+        {/* Sección de precio mínimo histórico (siempre visible) */}
+        {historicalMinPrice && historicalMinPrice > 0 && (
+          <div className="historical-price-section">
+            <h4 className="historical-price-title">
+              Escenario con Precio Mínimo Histórico ({formatCurrency(historicalMinPrice)})
+            </h4>
+            <div className="margin-summary-grid">
+              <div className="margin-summary-item">
+                <span className="margin-label">Beneficio neto por unidad:</span>
+                <div className={`margin-value ${getValueClass(minProfit)}`}>
+                  {formatCurrency(minProfit)}
                 </div>
-              )}
-              <div className="chart-bar profit-bar" style={{width: `${(netProfit / sellingPrice) * 100}%`}}>
-                <span className="bar-label">Beneficio</span>
+              </div>
+              <div className="margin-summary-item">
+                <span className="margin-label">Margen neto:</span>
+                <div className={`margin-value ${getValueClass(minProfitMargin)}`}>
+                  {formatPercent(minProfitMargin)}
+                </div>
               </div>
             </div>
-            <div className="chart-labels">
-              <div className="chart-label">0%</div>
-              <div className="chart-label">25%</div>
-              <div className="chart-label">50%</div>
-              <div className="chart-label">75%</div>
-              <div className="chart-label">100%</div>
-            </div>
           </div>
-          
-          <div className="summary-metrics">
-            <div className="summary-metric">
-              <div className="summary-value">${sellingPrice.toFixed(2)}</div>
-              <div className="summary-label">Precio venta</div>
+        )}
+        
+        {/* Vista detallada (expandible) */}
+        {showDetails && (
+          <div className="margin-details">
+            <div className="margin-details-section">
+              <h4 className="details-section-title">Desglose Real de Márgenes (Precio Actual)</h4>
+              <table className="margin-details-table">
+                <tbody>
+                  <tr>
+                    <td>Precio de venta</td>
+                    <td className="text-right">{formatCurrency(sellingPrice)}</td>
+                    <td className="text-right">100.00%</td>
+                  </tr>
+                  {applyIva && (
+                    <tr>
+                      <td>IVA (16%)</td>
+                      <td className="text-right">-{formatCurrency(sellingPrice - priceAfterIva)}</td>
+                      <td className="text-right">-{formatPercent((sellingPrice - priceAfterIva) / sellingPrice * 100)}</td>
+                    </tr>
+                  )}
+                  <tr>
+                    <td>Precio sin IVA</td>
+                    <td className="text-right">{formatCurrency(priceAfterIva)}</td>
+                    <td className="text-right">{formatPercent(priceAfterIva / sellingPrice * 100)}</td>
+                  </tr>
+                  <tr>
+                    <td>Comisión de referencia</td>
+                    <td className="text-right">-{formatCurrency(amazonCosts.referralFee)}</td>
+                    <td className="text-right">-{formatPercent(amazonCosts.referralFee / sellingPrice * 100)}</td>
+                  </tr>
+                  <tr>
+                    <td>Tarifa de cumplimiento</td>
+                    <td className="text-right">-{formatCurrency(amazonCosts.fulfillmentFee)}</td>
+                    <td className="text-right">-{formatPercent(amazonCosts.fulfillmentFee / sellingPrice * 100)}</td>
+                  </tr>
+                  <tr>
+                    <td>Tarifa de almacenamiento</td>
+                    <td className="text-right">-{formatCurrency(amazonCosts.storageFee)}</td>
+                    <td className="text-right">-{formatPercent(amazonCosts.storageFee / sellingPrice * 100)}</td>
+                  </tr>
+                  <tr>
+                    <td>Otras tarifas</td>
+                    <td className="text-right">-{formatCurrency(amazonCosts.otherFees)}</td>
+                    <td className="text-right">-{formatPercent(amazonCosts.otherFees / sellingPrice * 100)}</td>
+                  </tr>
+                  <tr className="subtotal-row">
+                    <td>Ingreso neto después de tarifas</td>
+                    <td className="text-right">{formatCurrency(netRevenue)}</td>
+                    <td className="text-right">{formatPercent(netRevenue / sellingPrice * 100)}</td>
+                  </tr>
+                  <tr>
+                    <td>Costo de adquisición</td>
+                    <td className="text-right">-{formatCurrency(costPrice)}</td>
+                    <td className="text-right">-{formatPercent(costPrice / sellingPrice * 100)}</td>
+                  </tr>
+                  <tr className="profit-row">
+                    <td>Beneficio neto por unidad</td>
+                    <td className={`text-right ${profit < 0 ? 'negative-amount' : ''}`}>
+                      {formatCurrency(profit)}
+                    </td>
+                    <td className={`text-right ${profitMargin < 0 ? 'negative-amount' : ''}`}>
+                      {formatPercent(profitMargin)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <div className="summary-metric">
-              <div className="summary-value">-${totalAmazonFees.toFixed(2)}</div>
-              <div className="summary-label">Costos Amazon</div>
-            </div>
-            <div className="summary-metric">
-              <div className="summary-value">-${costPrice.toFixed(2)}</div>
-              <div className="summary-label">Costo producto</div>
-            </div>
-            <div className="summary-metric">
-              <div className={`summary-value ${marginClass}`}>${netProfit.toFixed(2)}</div>
-              <div className="summary-label">Beneficio neto</div>
-            </div>
-            <div className="summary-metric">
-              <div className={`summary-value ${marginClass}`}>{netMarginPercentage.toFixed(2)}%</div>
-              <div className="summary-label">Margen neto</div>
-            </div>
-          </div>
-          
-          {historicalMinPrice > 0 && (
-            <div className="min-price-summary">
-              <div className="min-price-scenario-summary">
-                <span className="min-price-icon">⚠️</span> Con precio mínimo histórico (${historicalMinPrice.toFixed(2)}): 
-                <span className="min-price-profit">${minPriceNetProfit.toFixed(2)}</span>
+            
+            {/* Desglose con precio mínimo histórico */}
+            {historicalMinPrice && historicalMinPrice > 0 && (
+              <div className="margin-details-section historical-margin-details">
+                <h4 className="details-section-title">Desglose Real de Márgenes (Precio Mínimo Histórico)</h4>
+                <table className="margin-details-table">
+                  <tbody>
+                    <tr>
+                      <td>Precio de venta (mínimo)</td>
+                      <td className="text-right">{formatCurrency(historicalMinPrice)}</td>
+                      <td className="text-right">100.00%</td>
+                    </tr>
+                    {applyIva && (
+                      <tr>
+                        <td>IVA (16%)</td>
+                        <td className="text-right">-{formatCurrency(historicalMinPrice - minPriceAfterIva)}</td>
+                        <td className="text-right">-{formatPercent((historicalMinPrice - minPriceAfterIva) / historicalMinPrice * 100)}</td>
+                      </tr>
+                    )}
+                    <tr>
+                      <td>Precio sin IVA</td>
+                      <td className="text-right">{formatCurrency(minPriceAfterIva)}</td>
+                      <td className="text-right">{formatPercent(minPriceAfterIva / historicalMinPrice * 100)}</td>
+                    </tr>
+                    <tr>
+                      <td>Comisión de referencia</td>
+                      <td className="text-right">-{formatCurrency(amazonCosts.referralFee)}</td>
+                      <td className="text-right">-{formatPercent(amazonCosts.referralFee / historicalMinPrice * 100)}</td>
+                    </tr>
+                    <tr>
+                      <td>Tarifa de cumplimiento</td>
+                      <td className="text-right">-{formatCurrency(amazonCosts.fulfillmentFee)}</td>
+                      <td className="text-right">-{formatPercent(amazonCosts.fulfillmentFee / historicalMinPrice * 100)}</td>
+                    </tr>
+                    <tr>
+                      <td>Tarifa de almacenamiento</td>
+                      <td className="text-right">-{formatCurrency(amazonCosts.storageFee)}</td>
+                      <td className="text-right">-{formatPercent(amazonCosts.storageFee / historicalMinPrice * 100)}</td>
+                    </tr>
+                    <tr>
+                      <td>Otras tarifas</td>
+                      <td className="text-right">-{formatCurrency(amazonCosts.otherFees)}</td>
+                      <td className="text-right">-{formatPercent(amazonCosts.otherFees / historicalMinPrice * 100)}</td>
+                    </tr>
+                    <tr className="subtotal-row">
+                      <td>Ingreso neto después de tarifas</td>
+                      <td className="text-right">{formatCurrency(minNetRevenue)}</td>
+                      <td className="text-right">{formatPercent(minNetRevenue / historicalMinPrice * 100)}</td>
+                    </tr>
+                    <tr>
+                      <td>Costo de adquisición</td>
+                      <td className="text-right">-{formatCurrency(costPrice)}</td>
+                      <td className="text-right">-{formatPercent(costPrice / historicalMinPrice * 100)}</td>
+                    </tr>
+                    <tr className="profit-row">
+                      <td>Beneficio neto por unidad</td>
+                      <td className={`text-right ${minProfit < 0 ? 'negative-amount' : ''}`}>
+                        {formatCurrency(minProfit)}
+                      </td>
+                      <td className={`text-right ${minProfitMargin < 0 ? 'negative-amount' : ''}`}>
+                        {formatPercent(minProfitMargin)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-            </div>
-          )}
-        </div>
-      )}
-      
-      <div className="margin-interpretation">
-        {netMarginPercentage >= 35 ? (
-          <p>✅ <strong>Excelente margen.</strong> Este producto tiene una rentabilidad muy atractiva.</p>
-        ) : netMarginPercentage >= 25 ? (
-          <p>✅ <strong>Buen margen.</strong> Este producto tiene una rentabilidad sólida.</p>
-        ) : netMarginPercentage >= 15 ? (
-          <p>⚠️ <strong>Margen medio.</strong> Rentabilidad aceptable pero vigile los costos.</p>
-        ) : netMarginPercentage >= 10 ? (
-          <p>⚠️ <strong>Margen bajo.</strong> Rentabilidad limitada, busque optimizar costos.</p>
-        ) : netMarginPercentage > 0 ? (
-          <p>❌ <strong>Margen muy bajo.</strong> Apenas rentable, considere otras opciones.</p>
-        ) : (
-          <p>❌ <strong>Pérdida.</strong> Este producto genera pérdidas, NO recomendado.</p>
+            )}
+            
+            {/* Comparativa entre precio actual y mínimo histórico */}
+            {historicalMinPrice && historicalMinPrice > 0 && (
+              <div className="margin-details-section comparison-section">
+                <h4 className="details-section-title">Comparativa entre Precio Actual y Mínimo Histórico</h4>
+                <table className="margin-details-table">
+                  <thead>
+                    <tr>
+                      <th>Métrica</th>
+                      <th className="text-right">Precio Actual</th>
+                      <th className="text-right">Precio Mínimo</th>
+                      <th className="text-right">Diferencia</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Precio de venta</td>
+                      <td className="text-right">{formatCurrency(sellingPrice)}</td>
+                      <td className="text-right">{formatCurrency(historicalMinPrice)}</td>
+                      <td className="text-right">{formatCurrency(sellingPrice - historicalMinPrice)}</td>
+                    </tr>
+                    <tr>
+                      <td>Ingreso neto tras tarifas</td>
+                      <td className="text-right">{formatCurrency(netRevenue)}</td>
+                      <td className="text-right">{formatCurrency(minNetRevenue)}</td>
+                      <td className="text-right">{formatCurrency(netRevenue - minNetRevenue)}</td>
+                    </tr>
+                    <tr className="profit-row">
+                      <td>Beneficio neto por unidad</td>
+                      <td className="text-right">{formatCurrency(profit)}</td>
+                      <td className="text-right">{formatCurrency(minProfit)}</td>
+                      <td className={`text-right ${profit - minProfit < 0 ? 'negative-amount' : ''}`}>
+                        {formatCurrency(profit - minProfit)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Margen neto</td>
+                      <td className="text-right">{formatPercent(profitMargin)}</td>
+                      <td className="text-right">{formatPercent(minProfitMargin)}</td>
+                      <td className={`text-right ${profitMargin - minProfitMargin < 0 ? 'negative-amount' : ''}`}>
+                        {formatPercent(profitMargin - minProfitMargin)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

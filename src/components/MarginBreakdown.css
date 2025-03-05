@@ -1,0 +1,151 @@
+.margin-breakdown-container {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+  
+  .margin-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    color: #333;
+    font-size: 1.1rem;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 8px;
+  }
+  
+  .toggle-details-btn {
+    background: none;
+    border: none;
+    color: #0066cc;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0 5px;
+  }
+  
+  .margin-summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+  }
+  
+  .margin-summary-item {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .margin-label {
+    font-size: 0.9rem;
+    color: #555;
+    margin-bottom: 5px;
+  }
+  
+  .margin-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 8px;
+    border-radius: 4px;
+    text-align: center;
+  }
+  
+  .high-value {
+    background-color: #d4edda;
+    color: #155724;
+  }
+  
+  .good-value {
+    background-color: #e0f3eb;
+    color: #287a52;
+  }
+  
+  .medium-value {
+    background-color: #fff3cd;
+    color: #856404;
+  }
+  
+  .negative-value {
+    background-color: #f8d7da;
+    color: #721c24;
+  }
+  
+  .margin-details {
+    margin-top: 20px;
+    border-top: 1px dashed #ccc;
+    padding-top: 15px;
+  }
+  
+  .margin-details-section {
+    margin-bottom: 25px;
+  }
+  
+  .details-section-title {
+    font-size: 1rem;
+    color: #333;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  
+  .margin-details-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  
+  .margin-details-table td, .margin-details-table th {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .margin-details-table th {
+    background-color: #f2f2f2;
+    text-align: left;
+  }
+  
+  .text-right {
+    text-align: right;
+  }
+  
+  .subtotal-row {
+    background-color: #f5f5f5;
+    font-weight: 500;
+  }
+  
+  .profit-row {
+    background-color: #f8f8f8;
+    font-weight: 700;
+  }
+  
+  .negative-amount {
+    color: #dc3545;
+  }
+  
+  .historical-price-section {
+    margin-top: 15px;
+    padding: 12px;
+    background-color: #e8f4fd;
+    border-radius: 6px;
+    border-left: 4px solid #0d6efd;
+  }
+  
+  .historical-price-title {
+    font-size: 0.95rem;
+    color: #0d6efd;
+    margin-bottom: 10px;
+  }
+  
+  .historical-margin-details {
+    background-color: #f0f8ff;
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 4px solid #0d6efd;
+  }
+  
+  .comparison-section {
+    background-color: #f0f0f0;
+    padding: 12px;
+    border-radius: 6px;
+  }

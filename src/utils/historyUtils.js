@@ -1,6 +1,3 @@
-// Si este archivo ya existe, necesitarás asegurarte de que incluye la función getSearches
-// y de que exporta ambas funciones: saveSearch y getSearches
-
 // Clave para almacenar las búsquedas en localStorage
 const SEARCHES_STORAGE_KEY = 'spra_saved_searches';
 
@@ -22,6 +19,9 @@ export const getSearches = () => {
   return searches ? JSON.parse(searches) : [];
 };
 
+// Alias para mantener compatibilidad con código existente
+export const getSearchHistory = getSearches;
+
 // Función para eliminar una búsqueda por ID
 export const deleteSearch = (searchId) => {
   const searches = getSearches();
@@ -33,5 +33,3 @@ export const deleteSearch = (searchId) => {
 export const clearAllSearches = () => {
   localStorage.removeItem(SEARCHES_STORAGE_KEY);
 };
-
-// Exporta las funciones para que estén disponibles en otros archivos

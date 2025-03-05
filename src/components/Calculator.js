@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { saveSearch } from '../utils/historyUtils';
 import { getSavedCategories, getSavedBrands, saveCategory, saveBrand } from '../utils/savedDataUtils';
 import SavedDataManager from './SavedDataManager';
+import MarginBreakdown from './MarginBreakdown';
 
 function Calculator({ mode }) {
   // Datos básicos del producto
@@ -21,6 +22,10 @@ function Calculator({ mode }) {
   const [sellingPrice, setSellingPrice] = useState(0);
   const [historicalMinPrice, setHistoricalMinPrice] = useState(0);
   
+  // NUEVOS: Opciones configurables
+  const [applyIva, setApplyIva] = useState(true); // IVA activado por defecto
+  const [customFbaFee, setCustomFbaFee] = useState(0); // Costo FBA personalizado
+  
   // Estado para categorías y marcas guardadas
   const [savedCategories, setSavedCategories] = useState([]);
   const [savedBrands, setSavedBrands] = useState([]);
@@ -33,8 +38,27 @@ function Calculator({ mode }) {
   const fbaRatio = (fbaVendors + fbmVendors > 0) ? fbaVendors / (fbaVendors + fbmVendors) : 0;
   const fbmRatio = (fbaVendors + fbmVendors > 0) ? fbmVendors / (fbaVendors + fbmVendors) : 0;
   
-  // Cálculos SPRA+
-  const grossMargin = sellingPrice > 0 ? ((sellingPrice - costPrice) / sellingPrice) * 100 : 0;
+  // Cálculos SPRA+ adaptados para configuraciones personalizadas
+  const calculateNetMargin = () => {
+    if (!sellingPrice || !costPrice) return 0;
+    
+    const ivaRate = applyIva ? 0.16 : 0; // Solo aplicar IVA si está activado
+    
+    // Precio después de IVA
+    const priceAfterIva = sellingPrice / (1 + ivaRate);
+    
+    // Usar la tarifa FBA personalizada en lugar de la calculada
+    const fbaFee = customFbaFee;
+    
+    // Ingresos netos después de comisiones
+    const netRevenue = priceAfterIva - fbaFee;
+    
+    // Margen neto (después de costos, comisiones e IVA)
+    return ((netRevenue - costPrice) / sellingPrice) * 100;
+  };
+  
+  const grossMargin = calculateNetMargin();
+  
   const priceStability = sellingPrice > 0 && historicalMinPrice > 0 
     ? ((sellingPrice - historicalMinPrice) / sellingPrice) * 100 
     : 0;
@@ -88,69 +112,81 @@ function Calculator({ mode }) {
     }
   };
 
-  // Efecto para reiniciar campos adicionales cuando cambia el modo
-  useEffect(() => {
-    if (mode === 'basic') {
-      // No es necesario borrar campos SPRA+ cuando cambiamos al modo básico
-    }
-  }, [mode]);
-
-  // Scoring functions para SPRA básico
+  // Scoring functions para SPRA básico (versiones mejoradas)
   const getRevenueScore = () => {
     if (!revenue || !competitors) return 0;
-    if (revenuePerCompetitor > 50000) return 45;
-    if (revenuePerCompetitor > 25000) return 35;
-    if (revenuePerCompetitor > 10000) return 25;
-    if (revenuePerCompetitor > 5000) return 15;
-    return 5;
+    
+    // Ajuste para ser más estricto con ingresos por competidor
+    if (revenuePerCompetitor > 75000) return 45;
+    if (revenuePerCompetitor > 40000) return 35;
+    if (revenuePerCompetitor > 20000) return 25;
+    if (revenuePerCompetitor > 10000) return 15;
+    if (revenuePerCompetitor > 5000) return 5;
+    return 0;
   };
 
   const getCompetitorCountScore = () => {
     if (!competitors) return 0;
-    if (competitors <= 2) return 20;
-    if (competitors <= 4) return 15;
-    if (competitors <= 6) return 8;
-    return 0;
+    if (competitors === 1) return 20; // Ser el único es ideal
+    if (competitors <= 3) return 15;
+    if (competitors <= 5) return 10;
+    if (competitors <= 7) return 5;
+    return 0; // Más de 7 competidores es muy saturado
   };
 
   const getFbaFbmRatioScore = () => {
     if (!fbaVendors && !fbmVendors) return 0;
-    if (fbmRatio > 0.7) return 20;
-    if (fbmRatio >= 0.3) return 10;
-    return 5;
+    
+    if (fbaVendors === 0 && fbmVendors > 0) return 20; // Mejor escenario: sin FBA, solo FBM
+    if (fbmRatio > 0.8) return 18;
+    if (fbmRatio > 0.6) return 15;
+    if (fbmRatio > 0.4) return 10;
+    if (fbmRatio > 0.2) return 5;
+    return 0; // Muy mal si casi todos son FBA
   };
 
   const getBuyBoxProbability = () => {
     if (!fbaVendors && !fbmVendors) return "N/A";
-    if (fbaVendors === 1 || fbmRatio > 0.7) return "Alta";
-    if (fbmRatio >= 0.3 && fbmRatio <= 0.7) return "Media";
+    
+    // Mejor evaluación de probabilidad del Buy Box
+    if (fbaVendors === 0 || (fbaVendors === 1 && fbmVendors >= 3)) return "Alta";
+    if (fbmRatio > 0.6) return "Media";
     return "Baja";
   };
 
   const getBuyBoxScore = () => {
     if (!fbaVendors && !fbmVendors) return 0;
+    
     const probability = getBuyBoxProbability();
     if (probability === "Alta") return 15;
-    if (probability === "Media") return 8;
+    if (probability === "Media") return 7;
     return 0;
   };
 
-  // Funciones scoring para SPRA+
+  // Funciones scoring para SPRA+ (versiones mejoradas)
   const getGrossMarginScore = () => {
     if (mode !== 'plus' || !sellingPrice || !costPrice) return 0;
-    if (grossMargin >= 40) return 15;
-    if (grossMargin >= 30) return 12;
-    if (grossMargin >= 20) return 8;
-    if (grossMargin >= 10) return 4;
-    return 0;
+    
+    const netMargin = grossMargin;
+    
+    // Umbrales mucho más exigentes considerando todas las comisiones
+    if (netMargin >= 35) return 15;
+    if (netMargin >= 25) return 12;
+    if (netMargin >= 15) return 8;
+    if (netMargin >= 10) return 4;
+    if (netMargin > 0) return 2; // Al menos hay algún margen positivo
+    return 0; // Margen negativo o cero
   };
 
   const getPriceStabilityScore = () => {
     if (mode !== 'plus' || !sellingPrice || !historicalMinPrice) return 0;
-    if (priceStability < 5) return 15;
-    if (priceStability < 15) return 10;
-    if (priceStability < 30) return 5;
-    return 0;
+    
+    // Ajustado para ser más estricto
+    if (priceStability < 3) return 15; // Muy estable
+    if (priceStability < 10) return 10;
+    if (priceStability < 20) return 5;
+    if (priceStability < 30) return 2;
+    return 0; // Muy inestable
   };
 
   // Calculate total score
@@ -166,33 +202,36 @@ function Calculator({ mode }) {
   const totalScore = mode === 'plus' ? plusTotalScore : basicTotalScore;
   const maxScore = mode === 'plus' ? 130 : 100;
 
-  // Get rating
+  // Get rating (versión mejorada)
   const getRating = () => {
     const scorePercentage = (totalScore / maxScore) * 100;
     
-    if (scorePercentage >= 80) return "Rentabilidad Alta";
-    if (scorePercentage >= 60) return "Rentabilidad Media-Alta";
-    if (scorePercentage >= 40) return "Rentabilidad Media";
-    if (scorePercentage >= 20) return "Rentabilidad Baja";
+    // Umbrales más estrictos
+    if (scorePercentage >= 85) return "Rentabilidad Alta";
+    if (scorePercentage >= 70) return "Rentabilidad Media-Alta";
+    if (scorePercentage >= 50) return "Rentabilidad Media";
+    if (scorePercentage >= 30) return "Rentabilidad Baja";
     return "No Recomendable";
   };
 
-  // Get color based on score for className
+  // Get color based on score for className (versión mejorada)
   const getScoreColorClass = (score, max) => {
     const percentage = score / max;
-    if (percentage >= 0.8) return "high-score";
-    if (percentage >= 0.6) return "good-score";
-    if (percentage >= 0.4) return "medium-score";
-    if (percentage >= 0.2) return "low-score";
+    if (percentage >= 0.85) return "high-score";
+    if (percentage >= 0.70) return "good-score";
+    if (percentage >= 0.50) return "medium-score";
+    if (percentage >= 0.30) return "low-score";
     return "poor-score";
   };
 
   const getTotalScoreColorClass = () => {
     const percentage = totalScore / maxScore;
-    if (percentage >= 0.8) return "high-total";
-    if (percentage >= 0.6) return "good-total";
-    if (percentage >= 0.4) return "medium-total";
-    if (percentage >= 0.2) return "low-total";
+    
+    // Umbrales más estrictos para colores
+    if (percentage >= 0.85) return "high-total";
+    if (percentage >= 0.70) return "good-total";
+    if (percentage >= 0.50) return "medium-total";
+    if (percentage >= 0.30) return "low-total";
     return "poor-total";
   };
 
@@ -229,6 +268,8 @@ function Calculator({ mode }) {
       searchData.priceStability = priceStability;
       searchData.marginScore = marginScore;
       searchData.stabilityScore = stabilityScore;
+      searchData.applyIva = applyIva;
+      searchData.customFbaFee = customFbaFee;
     }
 
     saveSearch(searchData);
@@ -251,6 +292,8 @@ function Calculator({ mode }) {
       setCostPrice(0);
       setSellingPrice(0);
       setHistoricalMinPrice(0);
+      setCustomFbaFee(0);
+      setApplyIva(true);
     }
   };
 
@@ -470,7 +513,51 @@ function Calculator({ mode }) {
                   step="0.01"
                 />
               </div>
+              {/* NUEVO: Campo para costo FBA personalizado */}
+              <div className="form-group">
+                <label className="form-label">Costo FBA personalizado ($):</label>
+                <input 
+                  type="number" 
+                  className="form-input" 
+                  value={customFbaFee} 
+                  onChange={(e) => setCustomFbaFee(Number(e.target.value))}
+                  min="0"
+                  step="0.01"
+                  placeholder="Ingrese comisión FBA total"
+                />
+              </div>
             </div>
+            
+            {/* NUEVO: Opción para activar/desactivar IVA */}
+            <div className="tax-toggle-container">
+              <label className="tax-toggle-label">
+                <input
+                  type="checkbox"
+                  checked={applyIva}
+                  onChange={() => setApplyIva(!applyIva)}
+                  className="tax-toggle-checkbox"
+                />
+                <span className="tax-toggle-text">
+                  Aplicar IVA de México (16%)
+                </span>
+              </label>
+              <span className="tax-toggle-help">
+                <span className="tooltip-icon">ℹ️</span>
+                <span className="tooltip-text">
+                  Si el producto está destinado al mercado mexicano, debe aplicarse el IVA del 16%. Desactive esta opción si el producto está destinado a otro mercado o si desea omitir el cálculo del IVA.
+                </span>
+              </span>
+            </div>
+            
+            {/* Mostrar el componente de desglose de márgenes */}
+            {sellingPrice > 0 && costPrice > 0 && (
+              <MarginBreakdown 
+                sellingPrice={sellingPrice}
+                costPrice={costPrice}
+                fbaFee={customFbaFee}
+                applyIva={applyIva}
+              />
+            )}
           </div>
         )}
 
@@ -505,7 +592,7 @@ function Calculator({ mode }) {
             <>
               <div className="calc-item plus-calc">
                 <span className="calc-label">
-                  <span className="badge plus-badge">PLUS</span> Margen bruto:
+                  <span className="badge plus-badge">PLUS</span> Margen neto:
                 </span>
                 <div className="calc-value">{grossMargin.toFixed(2)}%</div>
               </div>
@@ -591,7 +678,7 @@ function Calculator({ mode }) {
             </h3>
             <div className="criterion-grid">
               <div className="criterion-item">
-                <span className="criterion-label">Margen bruto actual:</span>
+                <span className="criterion-label">Margen neto actual:</span>
                 <div className="criterion-value">{grossMargin.toFixed(2)}%</div>
               </div>
               <div className="criterion-item">
@@ -644,20 +731,12 @@ function Calculator({ mode }) {
       <div className="section rating-scale">
         <h2 className="section-title">ESCALA DE VALORACIÓN ({mode === 'plus' ? 'SPRA+' : 'SPRA'})</h2>
         <div className="scale-grid">
-          <div className="scale-item high">80-100%:<br/>Rentabilidad Alta</div>
-          <div className="scale-item good">60-79%:<br/>Rentabilidad Media-Alta</div>
-          <div className="scale-item medium">40-59%:<br/>Rentabilidad Media</div>
-          <div className="scale-item low">20-39%:<br/>Rentabilidad Baja</div>
-          <div className="scale-item poor">0-19%:<br/>No Recomendable</div>
+          <div className="scale-item high">85-100%:<br/>Rentabilidad Alta</div>
+          <div className="scale-item good">70-84%:<br/>Rentabilidad Media-Alta</div>
+          <div className="scale-item medium">50-69%:<br/>Rentabilidad Media</div>
+          <div className="scale-item low">30-49%:<br/>Rentabilidad Baja</div>
+          <div className="scale-item poor">0-29%:<br/>No Recomendable</div>
         </div>
-        
-        {mode === 'plus' && (
-          <div className="scale-explanation">
-            <p>
-              <strong>Nota:</strong> En el modo SPRA+, la escala se basa en el porcentaje del puntaje máximo de 130 puntos.
-            </p>
-          </div>
-        )}
       </div>
       
       {/* Additional Notes */}

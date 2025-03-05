@@ -570,6 +570,7 @@ function Calculator({ mode }) {
                 costPrice={costPrice}
                 amazonCosts={amazonCosts}
                 applyIva={applyIva}
+                historicalMinPrice={historicalMinPrice}
               />
             )}
           </div>

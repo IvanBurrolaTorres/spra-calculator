@@ -2054,4 +2054,46 @@ body {
   font-weight: 700;
   color: #b45309;
 }
+/* Estilo para el escenario de precio mínimo */
+.min-price-scenario {
+  margin-top: 10px;
+  background-color: #fffbeb;
+  border-radius: var(--border-radius);
+  padding: 8px 12px;
+  border-left: 3px solid #f59e0b;
+}
+
+.min-price-icon {
+  margin-right: 5px;
+}
+
+.min-price-value {
+  font-weight: 700;
+  color: #b45309;
+}
+
+.min-price-summary {
+  margin-top: 15px;
+  background-color: #fffbeb;
+  border-radius: var(--border-radius);
+  padding: 12px 15px;
+  border-left: 3px solid #f59e0b;
+  text-align: center;
+}
+
+.min-price-scenario-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  color: #92400e;
+}
+
+.min-price-profit {
+  margin-left: 8px;
+  font-weight: 700;
+  color: #b45309;
+  font-size: 1.1rem;
+}
 }

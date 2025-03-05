@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/spra-calculator/static/css/main.ef594375.css",
-    "main.js": "/spra-calculator/static/js/main.cbe6ae9b.js",
+    "main.css": "/spra-calculator/static/css/main.abd5c58f.css",
+    "main.js": "/spra-calculator/static/js/main.70231cad.js",
     "static/js/453.9c341333.chunk.js": "/spra-calculator/static/js/453.9c341333.chunk.js",
     "index.html": "/spra-calculator/index.html",
-    "main.ef594375.css.map": "/spra-calculator/static/css/main.ef594375.css.map",
-    "main.cbe6ae9b.js.map": "/spra-calculator/static/js/main.cbe6ae9b.js.map",
+    "main.abd5c58f.css.map": "/spra-calculator/static/css/main.abd5c58f.css.map",
+    "main.70231cad.js.map": "/spra-calculator/static/js/main.70231cad.js.map",
     "453.9c341333.chunk.js.map": "/spra-calculator/static/js/453.9c341333.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.ef594375.css",
-    "static/js/main.cbe6ae9b.js"
+    "static/css/main.abd5c58f.css",
+    "static/js/main.70231cad.js"
   ]
 }

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { saveSearch } from '../utils/historyUtils';
+import { getSavedCategories, getSavedBrands, saveCategory, saveBrand } from '../utils/savedDataUtils';
+import SavedDataManager from './SavedDataManager';
 
 function Calculator({ mode }) {
   // Datos básicos del producto
@@ -19,6 +21,13 @@ function Calculator({ mode }) {
   const [sellingPrice, setSellingPrice] = useState(0);
   const [historicalMinPrice, setHistoricalMinPrice] = useState(0);
   
+  // Estado para categorías y marcas guardadas
+  const [savedCategories, setSavedCategories] = useState([]);
+  const [savedBrands, setSavedBrands] = useState([]);
+  const [showSavedDataManager, setShowSavedDataManager] = useState(false);
+  const [showCategoriesList, setShowCategoriesList] = useState(false);
+  const [showBrandsList, setShowBrandsList] = useState(false);
+  
   // Cálculos derivados
   const revenuePerCompetitor = competitors > 0 ? revenue / competitors : 0;
   const fbaRatio = (fbaVendors + fbmVendors > 0) ? fbaVendors / (fbaVendors + fbmVendors) : 0;
@@ -29,6 +38,55 @@ function Calculator({ mode }) {
   const priceStability = sellingPrice > 0 && historicalMinPrice > 0 
     ? ((sellingPrice - historicalMinPrice) / sellingPrice) * 100 
     : 0;
+
+  // Cargar categorías y marcas guardadas
+  useEffect(() => {
+    loadSavedData();
+  }, []);
+
+  // Recargar datos guardados después de cerrar el gestor
+  useEffect(() => {
+    if (!showSavedDataManager) {
+      loadSavedData();
+    }
+  }, [showSavedDataManager]);
+
+  const loadSavedData = () => {
+    setSavedCategories(getSavedCategories());
+    setSavedBrands(getSavedBrands());
+  };
+
+  // Manejar selección de categoría
+  const handleCategorySelect = (selectedCategory) => {
+    setCategory(selectedCategory);
+    setShowCategoriesList(false);
+  };
+
+  // Manejar selección de marca
+  const handleBrandSelect = (selectedBrand) => {
+    setBrand(selectedBrand);
+    setShowBrandsList(false);
+  };
+
+  // Guardar nueva categoría
+  const handleSaveCategory = () => {
+    if (category.trim() && saveCategory(category)) {
+      loadSavedData();
+      alert('Categoría guardada con éxito.');
+    } else if (category.trim()) {
+      alert('Esta categoría ya está guardada.');
+    }
+  };
+
+  // Guardar nueva marca
+  const handleSaveBrand = () => {
+    if (brand.trim() && saveBrand(brand)) {
+      loadSavedData();
+      alert('Marca guardada con éxito.');
+    } else if (brand.trim()) {
+      alert('Esta marca ya está guardada.');
+    }
+  };
 
   // Efecto para reiniciar campos adicionales cuando cambia el modo
   useEffect(() => {
@@ -226,26 +284,103 @@ function Calculator({ mode }) {
               placeholder="Ej. B0123456789"
             />
           </div>
-          <div className="form-group">
+          <div className="form-group dropdown-group">
             <label className="form-label">Categoría:</label>
-            <input 
-              type="text" 
-              className="form-input" 
-              value={category} 
-              onChange={(e) => setCategory(e.target.value)}
-              placeholder="Ej. Electrónica, Hogar, etc."
-            />
+            <div className="dropdown-input-container">
+              <input 
+                type="text" 
+                className="form-input" 
+                value={category} 
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="Seleccione o ingrese categoría"
+                onClick={() => setShowCategoriesList(true)}
+              />
+              <div className="input-actions">
+                {category && (
+                  <button 
+                    className="save-value-button" 
+                    title="Guardar categoría"
+                    onClick={handleSaveCategory}
+                  >
+                    💾
+                  </button>
+                )}
+                <button 
+                  className="dropdown-toggle" 
+                  onClick={() => setShowCategoriesList(!showCategoriesList)}
+                >
+                  {showCategoriesList ? '▲' : '▼'}
+                </button>
+              </div>
+              
+              {showCategoriesList && savedCategories.length > 0 && (
+                <ul className="dropdown-options">
+                  {savedCategories.map((cat) => (
+                    <li 
+                      key={cat} 
+                      onClick={() => handleCategorySelect(cat)}
+                      className={cat === category ? 'selected' : ''}
+                    >
+                      {cat}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
-          <div className="form-group">
+          <div className="form-group dropdown-group">
             <label className="form-label">Marca:</label>
-            <input 
-              type="text" 
-              className="form-input" 
-              value={brand} 
-              onChange={(e) => setBrand(e.target.value)}
-              placeholder="Nombre de la marca"
-            />
+            <div className="dropdown-input-container">
+              <input 
+                type="text" 
+                className="form-input" 
+                value={brand} 
+                onChange={(e) => setBrand(e.target.value)}
+                placeholder="Seleccione o ingrese marca"
+                onClick={() => setShowBrandsList(true)}
+              />
+              <div className="input-actions">
+                {brand && (
+                  <button 
+                    className="save-value-button" 
+                    title="Guardar marca"
+                    onClick={handleSaveBrand}
+                  >
+                    💾
+                  </button>
+                )}
+                <button 
+                  className="dropdown-toggle" 
+                  onClick={() => setShowBrandsList(!showBrandsList)}
+                >
+                  {showBrandsList ? '▲' : '▼'}
+                </button>
+              </div>
+              
+              {showBrandsList && savedBrands.length > 0 && (
+                <ul className="dropdown-options">
+                  {savedBrands.map((b) => (
+                    <li 
+                      key={b} 
+                      onClick={() => handleBrandSelect(b)}
+                      className={b === brand ? 'selected' : ''}
+                    >
+                      {b}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
+        </div>
+        
+        <div className="manage-saved-data">
+          <button 
+            className="manage-data-button"
+            onClick={() => setShowSavedDataManager(true)}
+          >
+            <span className="button-icon">⚙️</span> Gestionar Categorías y Marcas
+          </button>
         </div>
       </div>
       
@@ -559,6 +694,13 @@ function Calculator({ mode }) {
             </ul>
           </div>
         </div>
+      )}
+      
+      {/* Modal para gestionar datos guardados */}
+      {showSavedDataManager && (
+        <SavedDataManager 
+          onClose={() => setShowSavedDataManager(false)} 
+        />
       )}
     </div>
   );

@@ -6,13 +6,19 @@ import Header from './components/Header';
 
 function App() {
   const [activeTab, setActiveTab] = useState('calculator');
+  const [calculatorMode, setCalculatorMode] = useState('basic'); // 'basic' o 'plus'
 
   return (
     <div className="app-container">
-      <Header activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Header 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        calculatorMode={calculatorMode}
+        setCalculatorMode={setCalculatorMode}
+      />
       
       {activeTab === 'calculator' ? (
-        <Calculator />
+        <Calculator mode={calculatorMode} />
       ) : (
         <History />
       )}

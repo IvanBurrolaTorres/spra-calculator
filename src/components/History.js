@@ -6,6 +6,7 @@ function History() {
   const [filter, setFilter] = useState('');
   const [sortField, setSortField] = useState('timestamp');
   const [sortDirection, setSortDirection] = useState('desc');
+  const [modeFilter, setModeFilter] = useState('all'); // 'all', 'basic', 'plus'
 
   // Load history on component mount
   useEffect(() => {
@@ -37,21 +38,29 @@ function History() {
   };
 
   // Filter and sort the history
-  const filteredHistory = searchHistory.filter(item => {
-    const searchTerm = filter.toLowerCase();
-    return (
-      item.productName?.toLowerCase().includes(searchTerm) ||
-      item.asin?.toLowerCase().includes(searchTerm) ||
-      item.category?.toLowerCase().includes(searchTerm) ||
-      item.brand?.toLowerCase().includes(searchTerm)
-    );
-  }).sort((a, b) => {
-    if (sortDirection === 'asc') {
-      return a[sortField] > b[sortField] ? 1 : -1;
-    } else {
-      return a[sortField] < b[sortField] ? 1 : -1;
-    }
-  });
+  const filteredHistory = searchHistory
+    .filter(item => {
+      // Text filter
+      const searchTerm = filter.toLowerCase();
+      const matchesText = (
+        item.productName?.toLowerCase().includes(searchTerm) ||
+        item.asin?.toLowerCase().includes(searchTerm) ||
+        item.category?.toLowerCase().includes(searchTerm) ||
+        item.brand?.toLowerCase().includes(searchTerm)
+      );
+      
+      // Mode filter
+      const matchesMode = modeFilter === 'all' || item.mode === modeFilter;
+      
+      return matchesText && matchesMode;
+    })
+    .sort((a, b) => {
+      if (sortDirection === 'asc') {
+        return a[sortField] > b[sortField] ? 1 : -1;
+      } else {
+        return a[sortField] < b[sortField] ? 1 : -1;
+      }
+    });
 
   return (
     <div className="history-container">
@@ -67,6 +76,19 @@ function History() {
               onChange={(e) => setFilter(e.target.value)}
               className="filter-input"
             />
+          </div>
+          
+          <div className="mode-filter">
+            <label>Modo:</label>
+            <select
+              value={modeFilter}
+              onChange={(e) => setModeFilter(e.target.value)}
+              className="mode-select"
+            >
+              <option value="all">Todos</option>
+              <option value="basic">SPRA Básico</option>
+              <option value="plus">SPRA+</option>
+            </select>
           </div>
           
           <div className="sort-options">
@@ -110,7 +132,10 @@ function History() {
             {filteredHistory.map(record => (
               <div key={record.id} className="history-record">
                 <div className="record-header">
-                  <div className="record-date">{formatDate(record.timestamp)}</div>
+                  <div className="record-info">
+                    <div className="record-date">{formatDate(record.timestamp)}</div>
+                    {record.mode === 'plus' && <span className="badge plus-badge">PLUS</span>}
+                  </div>
                   <button 
                     onClick={() => handleDeleteSearch(record.id)}
                     className="delete-button"
@@ -141,16 +166,39 @@ function History() {
                       <span className="record-value">{record.brand}</span>
                     </div>
                   )}
+                  
+                  {/* SPRA+ specific details */}
+                  {record.mode === 'plus' && record.grossMargin !== undefined && (
+                    <div className="record-item">
+                      <span className="record-label">Margen bruto:</span>
+                      <span className="record-value">{record.grossMargin.toFixed(2)}%</span>
+                    </div>
+                  )}
+                  {record.mode === 'plus' && record.priceStability !== undefined && (
+                    <div className="record-item">
+                      <span className="record-label">Estabilidad precio:</span>
+                      <span className="record-value">{record.priceStability.toFixed(2)}%</span>
+                    </div>
+                  )}
+                  
                   <div className="record-item">
                     <span className="record-label">Puntuación:</span>
-                    <span className={`record-value ${getTotalScoreClass(record.totalScore)}`}>
-                      {record.totalScore} / 100
+                    <span className={`record-value ${getTotalScoreClass(record.totalScore, record.maxScore || 100)}`}>
+                      {record.totalScore} / {record.maxScore || 100}
                     </span>
                   </div>
                   <div className="record-item">
                     <span className="record-label">Valoración:</span>
                     <span className="record-value">{record.rating}</span>
                   </div>
+                </div>
+                
+                {/* Visual progress bar */}
+                <div className="record-progress-container">
+                  <div 
+                    className={`record-progress-bar ${getTotalScoreClass(record.totalScore, record.maxScore || 100)}`}
+                    style={{ width: `${(record.totalScore / (record.maxScore || 100)) * 100}%` }}
+                  ></div>
                 </div>
               </div>
             ))}
@@ -161,12 +209,13 @@ function History() {
   );
 }
 
-// Helper function to get score class
-function getTotalScoreClass(score) {
-  if (score >= 80) return "high-value";
-  if (score >= 60) return "good-value";
-  if (score >= 40) return "medium-value";
-  if (score >= 20) return "low-value";
+// Helper function to get score class based on percentage
+function getTotalScoreClass(score, maxScore) {
+  const percentage = (score / maxScore) * 100;
+  if (percentage >= 80) return "high-value";
+  if (percentage >= 60) return "good-value";
+  if (percentage >= 40) return "medium-value";
+  if (percentage >= 20) return "low-value";
   return "poor-value";
 }
 

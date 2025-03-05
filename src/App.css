@@ -2037,5 +2037,21 @@ body {
   font-size: 0.8rem;
   color: #64748b;
 }
-  
+  /* Estilo para el escenario de precio mínimo */
+.min-price-scenario {
+  margin-top: 15px;
+  background-color: #fffbeb;
+  border-radius: var(--border-radius);
+  padding: 8px 12px;
+  border-left: 3px solid #f59e0b;
+}
+
+.min-price-icon {
+  margin-right: 5px;
+}
+
+.min-price-value {
+  font-weight: 700;
+  color: #b45309;
+}
 }

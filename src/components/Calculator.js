@@ -3,6 +3,7 @@ import { saveSearch } from '../utils/historyUtils';
 import { getSavedCategories, getSavedBrands, saveCategory, saveBrand } from '../utils/savedDataUtils';
 import SavedDataManager from './SavedDataManager';
 import MarginBreakdown from './MarginBreakdown';
+import AmazonCostsPanel from './AmazonCostsPanel';
 
 function Calculator({ mode }) {
   // Datos básicos del producto
@@ -22,9 +23,17 @@ function Calculator({ mode }) {
   const [sellingPrice, setSellingPrice] = useState(0);
   const [historicalMinPrice, setHistoricalMinPrice] = useState(0);
   
+  // Costos de Amazon
+  const [amazonCosts, setAmazonCosts] = useState({
+    referralFee: 0,
+    fulfillmentFee: 0,
+    storageFee: 0,
+    otherFees: 0,
+    total: 0
+  });
+  
   // NUEVOS: Opciones configurables
   const [applyIva, setApplyIva] = useState(true); // IVA activado por defecto
-  const [customFbaFee, setCustomFbaFee] = useState(0); // Costo FBA personalizado
   
   // Estado para categorías y marcas guardadas
   const [savedCategories, setSavedCategories] = useState([]);
@@ -38,7 +47,7 @@ function Calculator({ mode }) {
   const fbaRatio = (fbaVendors + fbmVendors > 0) ? fbaVendors / (fbaVendors + fbmVendors) : 0;
   const fbmRatio = (fbaVendors + fbmVendors > 0) ? fbmVendors / (fbaVendors + fbmVendors) : 0;
   
-  // Cálculos SPRA+ adaptados para configuraciones personalizadas
+  // Cálculos SPRA+ adaptados para el nuevo sistema de costos
   const calculateNetMargin = () => {
     if (!sellingPrice || !costPrice) return 0;
     
@@ -47,11 +56,11 @@ function Calculator({ mode }) {
     // Precio después de IVA
     const priceAfterIva = sellingPrice / (1 + ivaRate);
     
-    // Usar la tarifa FBA personalizada en lugar de la calculada
-    const fbaFee = customFbaFee;
+    // Usar los costos de Amazon totales
+    const fees = amazonCosts.total;
     
     // Ingresos netos después de comisiones
-    const netRevenue = priceAfterIva - fbaFee;
+    const netRevenue = priceAfterIva - fees;
     
     // Margen neto (después de costos, comisiones e IVA)
     return ((netRevenue - costPrice) / sellingPrice) * 100;
@@ -269,7 +278,7 @@ function Calculator({ mode }) {
       searchData.marginScore = marginScore;
       searchData.stabilityScore = stabilityScore;
       searchData.applyIva = applyIva;
-      searchData.customFbaFee = customFbaFee;
+      searchData.amazonCosts = amazonCosts;
     }
 
     saveSearch(searchData);
@@ -292,7 +301,13 @@ function Calculator({ mode }) {
       setCostPrice(0);
       setSellingPrice(0);
       setHistoricalMinPrice(0);
-      setCustomFbaFee(0);
+      setAmazonCosts({
+        referralFee: 0,
+        fulfillmentFee: 0,
+        storageFee: 0,
+        otherFees: 0,
+        total: 0
+      });
       setApplyIva(true);
     }
   };
@@ -300,6 +315,11 @@ function Calculator({ mode }) {
   // Validación de datos para SPRA+
   const hasValidSpraBasicData = revenue && competitors && (fbaVendors || fbmVendors);
   const hasValidSpraPlusData = hasValidSpraBasicData && mode === 'plus' && costPrice && sellingPrice && historicalMinPrice;
+
+  // Manejar cambios en los costos de Amazon
+  const handleAmazonCostsChange = (costs) => {
+    setAmazonCosts(costs);
+  };
 
   return (
     <div className="calculator-container">
@@ -513,22 +533,16 @@ function Calculator({ mode }) {
                   step="0.01"
                 />
               </div>
-              {/* NUEVO: Campo para costo FBA personalizado */}
-              <div className="form-group">
-                <label className="form-label">Costo FBA personalizado ($):</label>
-                <input 
-                  type="number" 
-                  className="form-input" 
-                  value={customFbaFee} 
-                  onChange={(e) => setCustomFbaFee(Number(e.target.value))}
-                  min="0"
-                  step="0.01"
-                  placeholder="Ingrese comisión FBA total"
-                />
-              </div>
             </div>
             
-            {/* NUEVO: Opción para activar/desactivar IVA */}
+            {/* Panel de costos de Amazon */}
+            <AmazonCostsPanel 
+              sellingPrice={sellingPrice}
+              category={category}
+              onCostsChange={handleAmazonCostsChange}
+            />
+            
+            {/* Opción para activar/desactivar IVA */}
             <div className="tax-toggle-container">
               <label className="tax-toggle-label">
                 <input
@@ -554,7 +568,7 @@ function Calculator({ mode }) {
               <MarginBreakdown 
                 sellingPrice={sellingPrice}
                 costPrice={costPrice}
-                fbaFee={customFbaFee}
+                amazonCosts={amazonCosts}
                 applyIva={applyIva}
               />
             )}

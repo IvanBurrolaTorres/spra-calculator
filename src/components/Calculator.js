@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { saveSearch } from '../utils/historyUtils';
+import { saveSearch, getSearches } from '../utils/historyUtils';
 import { getSavedCategories, getSavedBrands, saveCategory, saveBrand } from '../utils/savedDataUtils';
 import SavedDataManager from './SavedDataManager';
 import MarginBreakdown from './MarginBreakdown';
@@ -41,6 +41,10 @@ function Calculator({ mode }) {
   const [showSavedDataManager, setShowSavedDataManager] = useState(false);
   const [showCategoriesList, setShowCategoriesList] = useState(false);
   const [showBrandsList, setShowBrandsList] = useState(false);
+  
+  // Estado para el modal de confirmación de ASIN duplicado
+  const [showDuplicateAsinModal, setShowDuplicateAsinModal] = useState(false);
+  const [pendingSearchData, setPendingSearchData] = useState(null);
   
   // Cálculos derivados
   const revenuePerCompetitor = competitors > 0 ? revenue / competitors : 0;
@@ -244,6 +248,28 @@ function Calculator({ mode }) {
     return "poor-total";
   };
 
+  // Verificar si un ASIN ya existe
+  const checkAsinExists = (asinToCheck) => {
+    const savedSearches = getSearches();
+    return savedSearches.some(search => search.asin.trim().toLowerCase() === asinToCheck.trim().toLowerCase());
+  };
+
+  // Función para confirmar guardar un ASIN duplicado
+  const confirmSaveSearch = () => {
+    if (pendingSearchData) {
+      saveSearch(pendingSearchData);
+      setPendingSearchData(null);
+      setShowDuplicateAsinModal(false);
+      alert('Búsqueda guardada con éxito.');
+    }
+  };
+
+  // Cancelar guardar un ASIN duplicado
+  const cancelSaveSearch = () => {
+    setPendingSearchData(null);
+    setShowDuplicateAsinModal(false);
+  };
+
   // Save search to history
   const handleSaveSearch = () => {
     if (!productName || !asin) {
@@ -281,8 +307,14 @@ function Calculator({ mode }) {
       searchData.amazonCosts = amazonCosts;
     }
 
-    saveSearch(searchData);
-    alert('Búsqueda guardada con éxito.');
+    // Verificar si el ASIN ya existe
+    if (checkAsinExists(asin)) {
+      setPendingSearchData(searchData);
+      setShowDuplicateAsinModal(true);
+    } else {
+      saveSearch(searchData);
+      alert('Búsqueda guardada con éxito.');
+    }
   };
 
   // Reset form
@@ -795,6 +827,37 @@ function Calculator({ mode }) {
         <SavedDataManager 
           onClose={() => setShowSavedDataManager(false)} 
         />
+      )}
+      
+      {/* Modal de confirmación para ASIN duplicado */}
+      {showDuplicateAsinModal && (
+        <div className="modal-overlay">
+          <div className="modal-container duplicate-asin-modal">
+            <div className="modal-header">
+              <h3>ASIN Duplicado</h3>
+              <button className="close-modal-btn" onClick={cancelSaveSearch}>×</button>
+            </div>
+            <div className="modal-content">
+              <p className="warning-message">
+                <span className="warning-icon">⚠️</span>
+                Ya existe un producto con este ASIN en tu historial.
+              </p>
+              <p>¿Quieres continuar y guardar este análisis de todos modos?</p>
+              <div className="duplicate-product-info">
+                <p><strong>ASIN:</strong> {asin}</p>
+                <p><strong>Producto:</strong> {productName}</p>
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button className="cancel-button" onClick={cancelSaveSearch}>
+                Cancelar
+              </button>
+              <button className="confirm-button" onClick={confirmSaveSearch}>
+                Guardar de todos modos
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

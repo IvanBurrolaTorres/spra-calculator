@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const AmazonCostsPanel = ({ 
   sellingPrice, 
@@ -13,7 +13,8 @@ const AmazonCostsPanel = ({
   const [isExpanded, setIsExpanded] = useState(false);
   
   // Calcular tarifa de referencia sugerida (podría mejorarse con tarifas reales por categoría)
-  const calculateSuggestedReferralFee = () => {
+  // Using useCallback to memoize the function
+  const calculateSuggestedReferralFee = useCallback(() => {
     if (!sellingPrice) return 0;
     
     // Tarifas de referencia aproximadas por categoría
@@ -34,13 +35,13 @@ const AmazonCostsPanel = ({
     
     const rate = categoryRates[category] || categoryRates['default'];
     return sellingPrice * rate;
-  };
+  }, [sellingPrice, category]); // Add dependencies here
   
   // Sugerir tarifas cuando cambia el precio o la categoría
   useEffect(() => {
     const suggestedReferral = calculateSuggestedReferralFee();
     setReferralFee(suggestedReferral.toFixed(2));
-  }, [sellingPrice, category]);
+  }, [sellingPrice, category, calculateSuggestedReferralFee]);
   
   // Calcular total de costos cuando cualquier valor cambia
   useEffect(() => {

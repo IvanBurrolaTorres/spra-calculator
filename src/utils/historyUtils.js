@@ -1,20 +1,37 @@
+// Si este archivo ya existe, necesitarás asegurarte de que incluye la función getSearches
+// y de que exporta ambas funciones: saveSearch y getSearches
+
+// Clave para almacenar las búsquedas en localStorage
+const SEARCHES_STORAGE_KEY = 'spra_saved_searches';
+
+// Función para guardar una búsqueda en el historial
 export const saveSearch = (searchData) => {
-    const history = getSearchHistory();
-    history.push(searchData);
-    localStorage.setItem('spraSearchHistory', JSON.stringify(history));
-  };
+  // Obtener búsquedas existentes
+  const existingSearches = getSearches();
   
-  export const getSearchHistory = () => {
-    const historyString = localStorage.getItem('spraSearchHistory');
-    return historyString ? JSON.parse(historyString) : [];
-  };
+  // Añadir la nueva búsqueda al principio del array
+  existingSearches.unshift(searchData);
   
-  export const deleteSearch = (id) => {
-    const history = getSearchHistory();
-    const updatedHistory = history.filter(item => item.id !== id);
-    localStorage.setItem('spraSearchHistory', JSON.stringify(updatedHistory));
-  };
-  
-  export const clearAllSearches = () => {
-    localStorage.removeItem('spraSearchHistory');
-  };
+  // Guardar el array actualizado
+  localStorage.setItem(SEARCHES_STORAGE_KEY, JSON.stringify(existingSearches));
+};
+
+// Función para obtener todas las búsquedas guardadas
+export const getSearches = () => {
+  const searches = localStorage.getItem(SEARCHES_STORAGE_KEY);
+  return searches ? JSON.parse(searches) : [];
+};
+
+// Función para eliminar una búsqueda por ID
+export const deleteSearch = (searchId) => {
+  const searches = getSearches();
+  const updatedSearches = searches.filter(search => search.id !== searchId);
+  localStorage.setItem(SEARCHES_STORAGE_KEY, JSON.stringify(updatedSearches));
+};
+
+// Función para limpiar todo el historial
+export const clearAllSearches = () => {
+  localStorage.removeItem(SEARCHES_STORAGE_KEY);
+};
+
+// Exporta las funciones para que estén disponibles en otros archivos
